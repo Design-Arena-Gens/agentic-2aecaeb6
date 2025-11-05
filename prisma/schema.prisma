@@ -1,0 +1,57 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum TaskStatus {
+  OPEN
+  DONE
+}
+
+enum TaskPriority {
+  NORMAL
+  HIGH
+}
+
+model User {
+  id             String   @id @default(uuid())
+  telegramId     String   @unique
+  chatId         String
+  timezone       String   @default("Asia/Kolkata")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  tasks          Task[]
+  lastDailyDigest DateTime?
+}
+
+model Task {
+  id               String        @id @default(uuid())
+  user             User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId           String
+  title            String
+  description      String?
+  dueDate          DateTime
+  timezone         String        @default("Asia/Kolkata")
+  tags             String[]
+  priority         TaskPriority  @default(NORMAL)
+  status           TaskStatus    @default(OPEN)
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  preReminderSent  Boolean       @default(false)
+  reminderSent     Boolean       @default(false)
+  snoozedUntil     DateTime?
+  messageLogs      TaskMessageLog[]
+}
+
+model TaskMessageLog {
+  id          String   @id @default(uuid())
+  task        Task?    @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  taskId      String?
+  telegramId  String
+  payload     Json
+  createdAt   DateTime @default(now())
+}
